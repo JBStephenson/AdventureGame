@@ -1,0 +1,34 @@
+﻿1 Introduction
+This document will describe the file format which is used to define the behavior of the Adventure game. It will be an ongoing and updated document. The file defines the following items with examples:
+        1. Rooms
+        2. Players
+XML is used as the basis for the definition file. All of the data needed to start a game, or to save a game, will be stored in the XML file.
+
+
+2 General Consideration
+Each item must have a name, with the exception of the player, as a unique identifier. The name must only be unique in its’ given category. 
+
+
+Players will gain points by entering rooms. Once a room is visited its’ points will be set to zero so the player can no longer gain points by visiting the room.
+
+
+3. Item Definitions
+
+
+3.2 Player
+Player has the following attributes:
+        1. room
+        2. points
+The room is the current room the player is in. It is the name of the room as defined by the room tag. Points are the current points the player posses, which are given and taken away depending on the actions of the player.
+
+
+3.2 Rooms
+Rooms have the following attributes:
+        1. name
+        2. points
+        3. description
+        4. summary
+Points are how many points the player obtains when they first enter the room. The description is what is displayed the first time a player enters the room. Every other time the player enters the room they are given the summary. 
+Rooms contain the following tags:
+        1. path
+A path are all rooms that the player is able to move to from their current room.
