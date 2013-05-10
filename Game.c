@@ -105,6 +105,35 @@ void print_room_paths(char room[])
     }
 }
 
+int isDirection(char str[])
+{
+    if(mxmlFindElement(tree, tree, "path", "command", str, MXML_DESCEND) != NULL)
+    {
+        return 1;
+    }
+    return 0;
+    
+}
+
+int isItem(char str[])
+{
+    if(mxmlFindElement(tree, tree, "item", "name", str, MXML_DESCEND) != NULL)
+    {
+        return 1;
+    }
+    return 0;
+    
+}
+
+int isChallenge(char str[])
+{
+    if(mxmlFindElement(tree, tree, "challenge", "command", str, MXML_DESCEND) != NULL)
+    {
+        return 1;
+    }
+    return 0;
+}
+
 
 //Take player node and points to add
 void add_points(int i)
@@ -116,29 +145,150 @@ void add_points(int i)
     points = mxmlElementGetAttr(node, "points");
     sprintf(buffer, "%d", atoi(points) + i);
     newpoints = &buffer;
-    printf("%s\n",newpoints);
+    //printf("%s\n",newpoints);
     mxmlElementSetAttr(node, "points", newpoints);
 }
 
 char *execute_command(char *command)
 {
+    char *firstinput = strtok(command, " \n");
+    char *secondinput = strtok(NULL, " \n");
+    char buffer[100];
     mxml_node_t *node;
     mxml_node_t *node2;
-    if(strcmp(command, "look\n") == 0)
+    mxml_node_t *tempnode;
+    if(0==1)
+    {
+        return 0;
+    }
+    else if(isDirection(firstinput) == 1)
+    {
+        node = mxmlFindElement(tree, tree, "player", NULL, NULL, MXML_DESCEND);
+        char *playerroom = mxmlElementGetAttr(node, "room");
+        node = mxmlFindElement(tree, tree, "room", "name", playerroom, MXML_DESCEND);
+        node = mxmlFindElement(node, tree, "path", NULL, NULL, MXML_DESCEND);
+        while(node != NULL)
+        {
+            if(strcmp(firstinput, mxmlElementGetAttr(node, "command")) == 0)
+            {
+                char *room = mxmlElementGetAttr(node, "dest");
+                node = mxmlFindElement(tree, tree, "player", NULL, NULL, MXML_DESCEND);
+                mxmlElementSetAttr(node, "room", room);
+                node = mxmlFindElement(tree, tree, "player", NULL, NULL, MXML_DESCEND);
+                node2 = mxmlFindElement(tree, tree, "room", "name", mxmlElementGetAttr(node, "room"), MXML_DESCEND);
+                return mxmlElementGetAttr(node2, "description");
+            }
+            node = mxmlFindElement(node, tree, "path", NULL, NULL, MXML_NO_DESCEND);
+        }
+        return "You can't go that way";
+        
+        
+    }
+    else if(strcmp(firstinput, "score") == 0)
+    {
+        node = mxmlFindElement(tree, tree, "player", NULL, NULL, MXML_DESCEND);
+        return mxmlElementGetAttr(node, "points"); 
+    }
+    
+    else if(strcmp(firstinput, "inventory") == 0)
+    {
+        char buffer[1024];
+        node = mxmlFindElement(tree, tree, "player", NULL, NULL, MXML_DESCEND);
+        node = mxmlFindElement(node, tree, "item", NULL, NULL, MXML_DESCEND);
+            while(node != NULL)
+            {
+                sprintf(buffer, "%s\n", mxmlElementGetAttr(node, "name"));
+                node = mxmlFindElement(node, tree, "item", NULL, NULL, MXML_DESCEND);
+            }
+        return &buffer;        
+    }
+    else if(strcmp(firstinput, "look") == 0)
     {
         node = mxmlFindElement(tree, tree, "player", NULL, NULL, MXML_DESCEND);
         node2 = mxmlFindElement(tree, tree, "room", "name", mxmlElementGetAttr(node, "room"), MXML_DESCEND);
-        return mxmlElementGetAttr(node2, "summary");
+        return mxmlElementGetAttr(node2, "description");
         
     }
-    else if(strcmp(command, "save\n") == 0)
+    else if(strcmp(firstinput, "save") == 0)
     {
-        db_save(tree, "GameSave.xml");
+        db_save(tree, "GameSave1.xml");
         return "Game saved under GameSave.xml";
     }
-    else if(strcmp(command, "exit\n") == 0)
+    else if(strcmp(firstinput, "get") == 0)
     {
-        return "exit";
+        if(isItem(secondinput) == 1)
+        {
+            node = mxmlFindElement(tree, tree, "player", NULL, NULL, MXML_DESCEND);
+            char *playerroom = mxmlElementGetAttr(node, "room");
+            node = mxmlFindElement(tree, tree, "room", "name", playerroom, MXML_DESCEND);
+            node = mxmlFindElement(node, tree, "item", NULL, NULL, MXML_DESCEND);
+            while(node != NULL)
+            {
+                if(strcmp(secondinput, mxmlElementGetAttr(node, "name")) == 0)
+                {
+                    add_points(atoi(mxmlElementGetAttr(node, "points")));
+                    mxmlElementSetAttr(node, "points", "0");
+                    tempnode = mxmlFindElement(tree, tree, "player", NULL, NULL, MXML_DESCEND);
+                    mxmlAdd(tempnode, MXML_ADD_AFTER, MXML_ADD_TO_PARENT, node);
+                    sprintf(buffer, "You got the %s", secondinput);
+                    return &buffer;
+                }
+                node = mxmlFindElement(node, tree, "path", NULL, NULL, MXML_NO_DESCEND);
+            }
+        }
+        return "Nothing to get by that name.";
+    }
+    else if(strcmp(firstinput, "drop") == 0)
+    {
+        if(isItem(secondinput) == 1)
+        {
+            node = mxmlFindElement(tree, tree, "player", NULL, NULL, MXML_DESCEND);
+            char *playerroom = mxmlElementGetAttr(node, "room");
+            node2 = mxmlFindElement(tree, tree, "room", "name", playerroom, MXML_DESCEND);
+            node = mxmlFindElement(node, tree, "item", NULL, NULL, MXML_DESCEND);
+            while(node != NULL)
+            {
+                if(strcmp(secondinput, mxmlElementGetAttr(node, "name")) == 0)
+                {
+                    mxmlAdd(node2, MXML_ADD_AFTER, MXML_ADD_TO_PARENT, node);
+                    //Remove from player
+                    sprintf(buffer, "You droped the %s", secondinput);
+                    return &buffer;
+                }
+                node = mxmlFindElement(node, tree, "path", NULL, NULL, MXML_NO_DESCEND);
+            }
+        }
+        return "Nothing to drop by that name.";
+    }
+    else if(isChallenge(firstinput) == 1)
+    {
+        node = mxmlFindElement(tree, tree, "player", NULL, NULL, MXML_DESCEND);
+        char *playerroom = mxmlElementGetAttr(node, "room");
+        node2 = mxmlFindElement(tree, tree, "room", "name", playerroom, MXML_DESCEND);
+        node = mxmlFindElement(node2, tree, "challenge", "command", firstinput, MXML_DESCEND);
+        if(node == NULL)
+        {
+            return "Cannot do that in this room"; //Add what this is
+        }
+        node = mxmlFindElement(tree, tree, "player", NULL, NULL, MXML_DESCEND);
+        node = mxmlFindElement(node, tree, "item", "name", secondinput, MXML_DESCEND);
+        if(node == NULL)
+        {
+            return "Not the correct item";
+        }
+        node = mxmlFindElement(tree, tree, "player", NULL, NULL, MXML_DESCEND);
+        playerroom = mxmlElementGetAttr(node, "room");
+        node2 = mxmlFindElement(tree, tree, "room", "name", playerroom, MXML_DESCEND);
+        node = mxmlFindElement(node2, tree, "challenge", "command", firstinput, MXML_DESCEND);
+        //if()
+        mxmlElementSetAttr(node, "completed", "yes");
+        return "You completed the challenge!";
+        
+        
+    }
+    else if(strcmp(firstinput, "exit") == 0)
+    {
+        exit(0);
     }
     else
     {
@@ -146,7 +296,8 @@ char *execute_command(char *command)
     }
 }
 
-//Got this sweet input code from http://stackoverflow.com/questions/314401/how-to-read-a-line-from-the-console-in-c
+//Got this input code from http://stackoverflow.com/questions/314401/how-to-read-a-line-from-the-console-in-c
+//Need to fix memory leak
 char * input_command()
 {
     printf("What would you like to do?\n");
@@ -183,28 +334,16 @@ char * input_command()
 
 int output_command(char *output)
 {
-    if(strcmp(output, "exit") != 0)
-    {
-        printf("%s\n", output);
-        return 0;
-    }
-    else
-    {
-        printf("Goodbye!\n");
-        return -1;
-    }
+    printf("%s\n", output);
 }
 
 int main()
 {
-    int i = 0;
     tree = db_load("Game.xml");     //Loads game information from Game.xml
-    print_room_paths("room2");      //Prints all paths from room2
-    add_points(6);                  //Adds 6 points to player
-    
-    while(i == 0)
+    //output_command(); //Need to make this do a look
+    while(1)
     {
-       i = output_command(input_command());
+       output_command(input_command());
     }
     
          

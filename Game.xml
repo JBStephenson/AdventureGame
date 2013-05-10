@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<room name="room1" points="1" description="Long Text Here" summary="Short Text Here">
+<room name="room1" points="0" description="Starting Room">
     <path command="up" dest="room2"/>
+    <item name="ax" points=3/>
 </room>
-<room name="room2" points="1" description="Starting Room - More Text" summary="Starting Room">
+<room name="room2" points="1" description="Room with snake">
     <path command="down" dest="room1"/>
     <path command="up" dest="room3"/>
+    <challenge completed="no" command="hit" points=5 object="ax" name="snake" description="A snake stands in your way"/>
 </room>
-<room name="room3" points="1" description="Long Text Here" summary="Short Text Here">
+<room name="room3" points="5" description="Last Room">
     <path command="down" dest="room2"/>
 </room>
-<player room="room2" points=30>
+<player room="room1" points=30>
 </player>
